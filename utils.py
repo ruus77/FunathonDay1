@@ -2,6 +2,20 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.model_selection import RandomizedSearchCV
+from functools import wraps
+import time
+
+def timeit(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = func(*args, **kwargs)
+        print(f"Total time: {time.time() - start}")
+        return result
+    return wrapper
+
+
 
 
 def get_data(url: str) -> pd.DataFrame:
@@ -50,9 +64,9 @@ class ModelSelector:
         r2 = r2_score(y_true, y_pred)
 
         return mse, mae, r2
-
+    @timeit
     def params_search(self,
-                    models: list[sklearn.base.BaseEstimator],
+                    models: list,
                     models_names: list[str],
                     params_grid: list[dict[str, list[str]]],
                     X_train: np.ndarray,
@@ -67,7 +81,7 @@ class ModelSelector:
         best_models_map = {}
 
         for model, name, grid in zip(models, models_names, params_grid):
-            random_search = RandomizedSearchCV(cv=TimeSeriesSplit(n_splits=cv),
+            random_search = RandomizedSearchCV(cv=cv,
                                                n_iter=n_iter,
                                                estimator=model,
                                                scoring=scoring,
@@ -109,7 +123,7 @@ class ModelSelector:
             metrics = self.metrics_report(y_pred=y_pred, y_true=y_eval)
 
             row = {
-                "data": "test",
+                "data": "eval",
                 "model_name": name,
                 "mse": metrics[0],
                 "mae": metrics[1],
