@@ -10,7 +10,7 @@ URL = "https://minio.lab.sspcloud.fr/projet-funathon/2026/project1/data/1_input/
 
 RANDOM_STATE = 77
 
-
+CAT_COLS = ["has_cheating", "has_elec", "has_elevator", "has_gas", "has_mdrainage", "has_rchute", "has_water", "stair"]
 
 models = [RandomForestRegressor(random_state=RANDOM_STATE, n_jobs=-1), XGBRegressor(random_state=RANDOM_STATE, n_jobs=-1, tree_method='hist')]
 
