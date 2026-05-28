@@ -2,7 +2,9 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-from sklearn.model_selection import RandomizedSearchCV
+from sklearn.experimental import enable_halving_search_cv
+from sklearn.model_selection import HalvingRandomSearchCV
+
 from functools import wraps
 import time
 
@@ -15,14 +17,25 @@ def timeit(func):
         return result
     return wrapper
 
+def log_transform(y: pd.Series)->pd.Series:
+    return y.transform(np.log1p)
 
-
+def exp_transform(y: pd.Series)->pd.Series:
+    return y.transform(np.expm1)
 
 def get_data(url: str) -> pd.DataFrame:
     df = pd.read_parquet(url)
     df = df.convert_dtypes()
     return df
 
+def report_metrics(y_true, y_pred):
+    report = {
+        "mse": mean_squared_error(y_true, y_pred),
+        "mae": mean_absolute_error(y_true, y_pred),
+        "r2": r2_score(y_true, y_pred)
+    }
+
+    return pd.Series(report)
 
 def get_data_splits(df: pd.DataFrame, random_state: int = 42):
 
@@ -81,13 +94,13 @@ class ModelSelector:
         best_models_map = {}
 
         for model, name, grid in zip(models, models_names, params_grid):
-            random_search = RandomizedSearchCV(cv=cv,
-                                               n_iter=n_iter,
+            random_search = HalvingRandomSearchCV(cv=cv,
+                                               #n_iter=n_iter,
                                                estimator=model,
                                                scoring=scoring,
                                                param_distributions=grid,
                                                verbose=1,
-                                               n_jobs=-1,
+                                               #n_jobs=-1,
                                                error_score="raise",
                                                random_state=self.random_state,
                                                refit=True)
